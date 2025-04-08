@@ -1,8 +1,3 @@
-# go-valuate
- 
-Company valuation logic and calculation based on DCF.
+# word classify
 
-## Usage
-
-- Change the numeric values in `main.go` to suit the current use case
-- Run from the target directory with `go run .`
+A quick fuzzy logic script that classifies words to their part of speech, given a list
