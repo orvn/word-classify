@@ -29,10 +29,12 @@ func main() {
 		}
 
 		parts := strings.Split(line, "\t")
-		if len(parts) == 2 {
-			// Use only second part, which contains the word
+		switch len(parts) {
+		case 1:
+			fmt.Println(parts[0])
+		case 2:
 			fmt.Println(parts[1])
-		} else {
+		default:
 			continue
 		}
 	}
