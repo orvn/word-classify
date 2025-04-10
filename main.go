@@ -10,15 +10,21 @@ import (
 )
 
 func classifyWord(word string) string {
-	sentence := fmt.Sprintf("This is about %s.", word)
-	doc, err := prose.NewDocument(sentence)
+	doc, err := prose.NewDocument(word)
 	if err != nil {
 		return "error"
 	}
 
-	for _, ent := range doc.Entities() {
-		if strings.Contains(ent.Text, word) {
-			return ent.Label
+	for _, tok := range doc.Tokens() {
+		switch tok.Tag {
+		case "NN", "NNS", "NNP", "NNPS":
+			return "noun"
+		case "VB", "VBD", "VBG", "VBN", "VBP", "VBZ":
+			return "verb"
+		case "JJ", "JJR", "JJS":
+			return "adjective"
+		default:
+			return "other"
 		}
 	}
 	return "unknown"
