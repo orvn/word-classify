@@ -23,6 +23,8 @@ func classifyWord(word string) string {
 			return "verb"
 		case "JJ", "JJR", "JJS":
 			return "adjective"
+		case "RB", "RBR", "RBS":
+			return "adverb"
 		default:
 			return "other"
 		}
