@@ -5,7 +5,24 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/jdkato/prose/v2"
 )
+
+func classifyWord(word string) string {
+	sentence := fmt.Sprintf("This is about %s.", word)
+	doc, err := prose.NewDocument(sentence)
+	if err != nil {
+		return "error"
+	}
+
+	for _, ent := range doc.Entities() {
+		if strings.Contains(ent.Text, word) {
+			return ent.Label
+		}
+	}
+	return "unknown"
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -29,14 +46,16 @@ func main() {
 		}
 
 		parts := strings.Split(line, "\t")
+		var word string
 		switch len(parts) {
 		case 1:
-			fmt.Println(parts[0])
+			word = parts[0]
 		case 2:
-			fmt.Println(parts[1])
+			word = parts[1]
 		default:
 			continue
 		}
+		fmt.Printf("%s -> %s\n", word, classifyWord(word))
 	}
 
 	if err := scanner.Err(); err != nil {
