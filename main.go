@@ -8,7 +8,12 @@ import (
 )
 
 func main() {
-	file, err := os.Open("wordlist.txt")
+	if len(os.Args) < 2 {
+		fmt.Println("Include a file reference to use")
+		return
+	}
+	filename := os.Args[1]
+	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -28,7 +33,7 @@ func main() {
 			// Use only second part, which contains the word
 			fmt.Println(parts[1])
 		} else {
-			fmt.Println(line)
+			continue
 		}
 	}
 
