@@ -14,13 +14,6 @@ type PartOfSpeech struct {
 	Tags []string
 }
 
-var posList = []PartOfSpeech{
-	{"noun", []string{"NN", "NNS", "NNP", "NNPS"}},
-	{"verb", []string{"VB", "VBD", "VBG", "VBN", "VBP", "VBZ"}},
-	{"adjective", []string{"JJ", "JJR", "JJS"}},
-	{"adverb", []string{"RB", "RBR", "RBS"}},
-}
-
 var posTags = map[string][]string{
 	"noun":      {"NN", "NNS", "NNP", "NNPS"},
 	"verb":      {"VB", "VBD", "VBG", "VBN", "VBP", "VBZ"},
@@ -59,9 +52,19 @@ func main() {
 	}
 	defer file.Close()
 
+	scanner := bufio.NewScanner(file)
+	totalLines := 0
+	for scanner.Scan() {
+		if strings.TrimSpace(scanner.Text()) != "" {
+			totalLines++
+		}
+	}
+	file.Seek(0, 0)
+	scanner = bufio.NewScanner(file)
+
 	os.MkdirAll("output", os.ModePerm)
 
-	scanner := bufio.NewScanner(file)
+	lineCount := 0
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -90,6 +93,8 @@ func main() {
 		if _, err := f.WriteString(word + "\n"); err != nil {
 			fmt.Printf("Error writing word: %s\n", err)
 		}
+		lineCount++
+		fmt.Printf("\r%d / %d words classified", lineCount, totalLines)
 	}
 
 	if err := scanner.Err(); err != nil {
