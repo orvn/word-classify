@@ -9,4 +9,5 @@ Accepts a wordlist file where each word is a newline (an awk-style plain text ta
 1. Clone this repo
 2. Run with `go run . wordlist.txt` (or any suitable plain text source)
 
-The CLI outputs each word's part of speech. Go must be installed.
+ Each word's part of speech is saved to a file in the `/output` directory. (Go must be installed).
+
