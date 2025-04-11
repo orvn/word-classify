@@ -9,6 +9,18 @@ import (
 	"github.com/jdkato/prose/v2"
 )
 
+type PartOfSpeech struct {
+	Name string
+	Tags []string
+}
+
+var posList = []PartOfSpeech{
+	{"noun", []string{"NN", "NNS", "NNP", "NNPS"}},
+	{"verb", []string{"VB", "VBD", "VBG", "VBN", "VBP", "VBZ"}},
+	{"adjective", []string{"JJ", "JJR", "JJS"}},
+	{"adverb", []string{"RB", "RBR", "RBS"}},
+}
+
 var posTags = map[string][]string{
 	"noun":      {"NN", "NNS", "NNP", "NNPS"},
 	"verb":      {"VB", "VBD", "VBG", "VBN", "VBP", "VBZ"},
@@ -30,9 +42,8 @@ func classifyWord(word string) string {
 				}
 			}
 		}
-		return "other"
 	}
-	return "unknown"
+	return "other"
 }
 
 func main() {
@@ -69,19 +80,7 @@ func main() {
 			continue
 		}
 		pos := classifyWord(word)
-		var outPath string
-		switch pos {
-		case "noun":
-			outPath = "output/nouns.txt"
-		case "verb":
-			outPath = "output/verbs.txt"
-		case "adjective":
-			outPath = "output/adjectives.txt"
-		case "adverb":
-			outPath = "output/adverbs.txt"
-		default:
-			outPath = "output/others.txt"
-		}
+		outPath := fmt.Sprintf("output/%ss.txt", pos)
 		f, err := os.OpenFile(outPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			fmt.Printf("Error writing to file: %s\n", err)
