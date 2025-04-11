@@ -9,6 +9,13 @@ import (
 	"github.com/jdkato/prose/v2"
 )
 
+var posTags = map[string][]string{
+	"noun":      {"NN", "NNS", "NNP", "NNPS"},
+	"verb":      {"VB", "VBD", "VBG", "VBN", "VBP", "VBZ"},
+	"adjective": {"JJ", "JJR", "JJS"},
+	"adverb":    {"RB", "RBR", "RBS"},
+}
+
 func classifyWord(word string) string {
 	doc, err := prose.NewDocument(word)
 	if err != nil {
@@ -16,18 +23,14 @@ func classifyWord(word string) string {
 	}
 
 	for _, tok := range doc.Tokens() {
-		switch tok.Tag {
-		case "NN", "NNS", "NNP", "NNPS":
-			return "noun"
-		case "VB", "VBD", "VBG", "VBN", "VBP", "VBZ":
-			return "verb"
-		case "JJ", "JJR", "JJS":
-			return "adjective"
-		case "RB", "RBR", "RBS":
-			return "adverb"
-		default:
-			return "other"
+		for category, tags := range posTags {
+			for _, tag := range tags {
+				if tok.Tag == tag {
+					return category
+				}
+			}
 		}
+		return "other"
 	}
 	return "unknown"
 }
