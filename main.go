@@ -45,6 +45,8 @@ func main() {
 	}
 	defer file.Close()
 
+	os.MkdirAll("output", os.ModePerm)
+
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
@@ -63,7 +65,29 @@ func main() {
 		default:
 			continue
 		}
-		fmt.Printf("%s -> %s\n", word, classifyWord(word))
+		pos := classifyWord(word)
+		var outPath string
+		switch pos {
+		case "noun":
+			outPath = "output/nouns.txt"
+		case "verb":
+			outPath = "output/verbs.txt"
+		case "adjective":
+			outPath = "output/adjectives.txt"
+		case "adverb":
+			outPath = "output/adverbs.txt"
+		default:
+			outPath = "output/others.txt"
+		}
+		f, err := os.OpenFile(outPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			fmt.Printf("Error writing to file: %s\n", err)
+			continue
+		}
+		defer f.Close()
+		if _, err := f.WriteString(word + "\n"); err != nil {
+			fmt.Printf("Error writing word: %s\n", err)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
