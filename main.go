@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/jdkato/prose/v2"
 )
@@ -20,6 +22,13 @@ var posTags = map[string][]string{
 	"adjective": {"JJ", "JJR", "JJS"},
 	"adverb":    {"RB", "RBR", "RBS"},
 }
+
+type SafeWriter struct {
+	File  *os.File
+	Mutex sync.Mutex
+}
+
+var writers = make(map[string]*SafeWriter)
 
 func classifyWord(word string) string {
 	doc, err := prose.NewDocument(strings.ToLower(word))
@@ -37,6 +46,16 @@ func classifyWord(word string) string {
 		}
 	}
 	return "other"
+}
+
+func writeSafely(pos, word string) {
+	writer, ok := writers[pos]
+	if !ok {
+		return
+	}
+	writer.Mutex.Lock()
+	defer writer.Mutex.Unlock()
+	writer.File.WriteString(word + "\n")
 }
 
 func main() {
@@ -64,8 +83,39 @@ func main() {
 
 	os.MkdirAll("output", os.ModePerm)
 
-	lineCount := 0
+	jobs := make(chan string, 100)
+	var wg sync.WaitGroup
 
+	for category := range posTags {
+		outPath := fmt.Sprintf("output/%ss.txt", category)
+		f, err := os.OpenFile(outPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			fmt.Printf("Error opening file: %s\n", err)
+			continue
+		}
+		writers[category] = &SafeWriter{File: f}
+		defer f.Close()
+	}
+
+	outPath := "output/others.txt"
+	f, err := os.OpenFile(outPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err == nil {
+		writers["other"] = &SafeWriter{File: f}
+		defer f.Close()
+	}
+
+	for i := 0; i < runtime.NumCPU(); i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for word := range jobs {
+				pos := classifyWord(word)
+				writeSafely(pos, word)
+			}
+		}()
+	}
+
+	lineCount := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		if len(strings.TrimSpace(line)) == 0 {
@@ -82,20 +132,14 @@ func main() {
 		default:
 			continue
 		}
-		pos := classifyWord(word)
-		outPath := fmt.Sprintf("output/%ss.txt", pos)
-		f, err := os.OpenFile(outPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			fmt.Printf("Error writing to file: %s\n", err)
-			continue
-		}
-		defer f.Close()
-		if _, err := f.WriteString(word + "\n"); err != nil {
-			fmt.Printf("Error writing word: %s\n", err)
-		}
+
+		jobs <- word
 		lineCount++
 		fmt.Printf("\r%d / %d words classified", lineCount, totalLines)
 	}
+
+	close(jobs)
+	wg.Wait()
 
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error reading file:", err)
