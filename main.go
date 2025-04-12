@@ -16,6 +16,7 @@ type PartOfSpeech struct {
 	Tags []string
 }
 
+// map part of speech to prose tags
 var posTags = map[string][]string{
 	"noun":      {"NN", "NNS", "NNP", "NNPS"},
 	"verb":      {"VB", "VBD", "VBG", "VBN", "VBP", "VBZ"},
@@ -86,6 +87,7 @@ func main() {
 	jobs := make(chan string, 100)
 	var wg sync.WaitGroup
 
+	// Pre-open output files
 	for category := range posTags {
 		outPath := fmt.Sprintf("output/%ss.txt", category)
 		f, err := os.OpenFile(outPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -104,6 +106,7 @@ func main() {
 		defer f.Close()
 	}
 
+	// Worker pool
 	for i := 0; i < runtime.NumCPU(); i++ {
 		wg.Add(1)
 		go func() {
