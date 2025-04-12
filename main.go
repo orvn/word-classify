@@ -22,7 +22,7 @@ var posTags = map[string][]string{
 }
 
 func classifyWord(word string) string {
-	doc, err := prose.NewDocument(word)
+	doc, err := prose.NewDocument(strings.ToLower(word))
 	if err != nil {
 		return "error"
 	}
