@@ -11,12 +11,7 @@ import (
 	"github.com/jdkato/prose/v2"
 )
 
-type PartOfSpeech struct {
-	Name string
-	Tags []string
-}
-
-// map part of speech to prose tags
+// Map of part of speech to Penn Treebank tags
 var posTags = map[string][]string{
 	"noun":      {"NN", "NNS", "NNP", "NNPS"},
 	"verb":      {"VB", "VBD", "VBG", "VBN", "VBP", "VBZ"},
@@ -24,12 +19,24 @@ var posTags = map[string][]string{
 	"adverb":    {"RB", "RBR", "RBS"},
 }
 
+// Wrap file and its mutex to allow synchronized access
 type SafeWriter struct {
 	File  *os.File
 	Mutex sync.Mutex
 }
 
 var writers = make(map[string]*SafeWriter)
+
+// Thread-safe write to output file
+func writeSafely(pos, word string) {
+	writer, ok := writers[pos]
+	if !ok {
+		return
+	}
+	writer.Mutex.Lock()
+	defer writer.Mutex.Unlock()
+	writer.File.WriteString(word + "\n")
+}
 
 func classifyWord(word string) string {
 	doc, err := prose.NewDocument(strings.ToLower(word))
@@ -49,16 +56,6 @@ func classifyWord(word string) string {
 	return "other"
 }
 
-func writeSafely(pos, word string) {
-	writer, ok := writers[pos]
-	if !ok {
-		return
-	}
-	writer.Mutex.Lock()
-	defer writer.Mutex.Unlock()
-	writer.File.WriteString(word + "\n")
-}
-
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Include a file reference to use")
@@ -73,12 +70,15 @@ func main() {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+
+	// Track progress
 	totalLines := 0
 	for scanner.Scan() {
 		if strings.TrimSpace(scanner.Text()) != "" {
 			totalLines++
 		}
 	}
+
 	file.Seek(0, 0)
 	scanner = bufio.NewScanner(file)
 
@@ -106,7 +106,7 @@ func main() {
 		defer f.Close()
 	}
 
-	// Worker pool
+	// Worker goroutines
 	for i := 0; i < runtime.NumCPU(); i++ {
 		wg.Add(1)
 		go func() {
